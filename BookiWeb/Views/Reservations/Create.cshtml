@@ -1,0 +1,104 @@
+﻿@using BookiWeb.Helpers
+@using BookiWeb.Models
+@model BookiWeb.Models.Reservation
+
+@{
+    ViewBag.Title = "Create";
+
+    List<SelectListItem> tablesList = new List<SelectListItem>();
+    tablesList.Add(new SelectListItem
+    {
+        Text = "",
+        Value = ""
+    });
+    List<SelectListItem> tablePackagesList = new List<SelectListItem>();
+    foreach (TablePackage tp in ViewBag.Venue.TablePackages)
+    {
+        tablePackagesList.Add(new SelectListItem
+        {
+            Text = $"{tp.Name} - {tp.Price} DKK",
+            Value = "" + tp.Id
+        });
+    }
+}
+
+<h2>Create</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+<div class="form-horizontal">
+    <h4>Reservation at @ViewBag.Venue.Name</h4>
+    <hr />
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    @if (@Request.QueryString["message"] != null)
+    {
+        <p class="text-danger">@Request.QueryString["message"]</p>
+    }
+    <div class="form-group">
+        @Html.LabelFor(model => model.DateTimeStart, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.DateTimeStart, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.DateTimeStart, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.DateTimeEnd, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.EditorFor(model => model.DateTimeEnd, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.DateTimeEnd, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.TableId, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.TableId, tablesList , "-- Select Table --", new { @class = "form-control" })
+        </div>
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.TablePackageIds, htmlAttributes: new { @class = "control-label col-md-2" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(model => model.TablePackageIds, tablePackagesList, "-- Select Table Packages --", new { @class = "form-control", multiple = "multiple" })
+        </div>
+    </div>
+
+    @Html.HiddenFor(model => model.CustomerId, new { Value = SessionsHelper.GetId() })
+
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <input type="submit" value="Create" class="btn btn-default" />
+        </div>
+    </div>
+</div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+
+@section Scripts {
+    <script>
+        function getAvailableTables() {
+            $('#TableId').empty();
+            let dateTimeStart = $("#DateTimeStart").val();
+            let dateTimeEnd = $("#DateTimeEnd").val();
+            $.get("https://localhost:44314/api/venues/1/available-tables?dateTimeStart=" + dateTimeStart + "&dateTimeEnd=" + dateTimeEnd, function (data) {
+                data.forEach(function (table) {
+                    $("#TableId").append("<option value='" + table.Id + "'>" + table.Name + " - " + table.NoOfSeats + " seats</option>");
+                });
+            });
+        };
+
+        $("#DateTimeStart").change(function () {
+            getAvailableTables();
+        });
+
+        $("#DateTimeEnd").change(function () {
+            getAvailableTables();
+        });
+    </script>   
+}
